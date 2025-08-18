@@ -1,0 +1,24 @@
+#Node/Typescript
+node_modules/
+dist/
+.nyc_output/
+coverage/
+
+#Env & logs
+.env 
+.env.*
+*.logs
+logs/
+pids/
+*.pid 
+*.seed
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+#OS/editor junk
+.DS_Store
+Thumbs.db 
+.vscode/* 
+!.vscode/extensions.json
+.idea/
