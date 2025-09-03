@@ -2,9 +2,10 @@ import { Request, Response } from "express";
 import stripe from "@/config/stripe";
 import { env } from "@/config/env";
 import Stripe from "stripe";
+import { Order } from "@/models/Order";
 
 //Stripe webhook endpoint
-export const handleStripeWebhook = (_req: Request, res: Response) => {
+export const handleStripeWebhook = async (_req: Request, res: Response) => {
 	const sig = _req.headers["stripe-signature"] as string;
 	let event: Stripe.Event;
 
@@ -19,24 +20,62 @@ export const handleStripeWebhook = (_req: Request, res: Response) => {
 		return res.status(400).send(`Webhook Error: ${err.message}`);
 	}
 
-	//Handle event types
-	switch (event.type) {
-		case "charge.succeeded":
-			console.log(`Charge succeeded ${event.type}`);
-			break;
-		case "checkout.session.completed":
-			const session = event.data.object as Stripe.Checkout.Session;
-			console.log(`Payment completed ${event.type}`);
-			//TODO: Mark payment as paid in db
-			break;
+	try {
+		//Handle event types
+		switch (event.type) {
+			case "charge.succeeded":
+				console.log(`Charge succeeded ${event.type}`);
+				break;
+			case "checkout.session.completed":
+				const session = event.data.object as Stripe.Checkout.Session;
 
-		case "payment_intent.succeeded":
-			console.log(`Payment intent succeeded ${event.type}`);
-			break;
+				const order = await Order.findOne({
+					checkoutSessionId: session.id,
+				});
+				if (order && order.status === "pending") {
+					order.status = "paid";
+					order.paymentIntentId = session.payment_intent as string;
+					await order.save();
+				}
+				console.log(`Payment completed ${event.type}`);
+				//TODO: Mark payment as paid in db
+				break;
 
-		default:
-			console.log(`Unhandled event type ${event.type}`);
+			case "payment_intent.succeeded":
+				console.log(`Payment intent succeeded ${event.type}`);
+				break;
+
+			case "payment_intent.payment_failed": {
+				const paymentIntent = event.data.object as Stripe.PaymentIntent;
+				const order = await Order.findOne({
+					paymentIntentId: paymentIntent.id,
+				});
+				if (order) {
+					order.status = "failed";
+					await order.save();
+				}
+				break;
+			}
+
+			case "checkout.session.expired": {
+				const session = event.data.object as Stripe.Checkout.Session;
+				const order = await Order.findOne({
+					checkoutSessionId: session.id,
+				});
+				if (order) {
+					order.status = "failed";
+					await order.save();
+				}
+				break;
+			}
+
+			default:
+				console.log(`Unhandled event type ${event.type}`);
+		}
+
+		res.json({ received: true });
+	} catch (err: any) {
+		console.error(`Error handling webhook: ${err.message}`);
+		res.status(500).send("Webhook handler error");
 	}
-
-	res.json({ received: true });
 };
