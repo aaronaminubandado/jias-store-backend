@@ -21,14 +21,17 @@ export const handleStripeWebhook = (_req: Request, res: Response) => {
 
 	//Handle event types
 	switch (event.type) {
+		case "charge.succeeded":
+			console.log(`Charge succeeded ${event.type}`);
+			break;
 		case "checkout.session.completed":
 			const session = event.data.object as Stripe.Checkout.Session;
-			console.log("Payment completed");
+			console.log(`Payment completed ${event.type}`);
 			//TODO: Mark payment as paid in db
 			break;
 
 		case "payment_intent.succeeded":
-			console.log("Payment intent succeeded");
+			console.log(`Payment intent succeeded ${event.type}`);
 			break;
 
 		default:
