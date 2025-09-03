@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import stripe from "@/config/stripe";
 import { env } from "@/config/env";
 import { Product } from "@/models/Product";
+import { Order } from "@/models/Order";
 
 export const createCheckoutSession = async (_req: Request, res: Response) => {
 	try {
@@ -18,6 +19,8 @@ export const createCheckoutSession = async (_req: Request, res: Response) => {
 				if (!product) throw new Error(`Product not found: ${item.id}`);
 				if (item.quantity < 1)
 					throw new Error("Quantity must be atleast 1");
+				if (product.stock < item.quantity)
+					throw new Error(`Not enough stock for ${product.name}`);
 				return {
 					price_data: {
 						currency: "usd",
@@ -31,6 +34,28 @@ export const createCheckoutSession = async (_req: Request, res: Response) => {
 				};
 			})
 		);
+
+		const order = await Order.create({
+			products: await Promise.all(
+				items.map(async (item: any) => {
+					const product = await Product.findById(item.id);
+					return {
+						product: item.id,
+						quantity: item.quantity,
+						price: product!.price, // from DB
+					};
+				})
+			),
+			totalAmount: await items.reduce(
+				async (sum: Promise<number>, item: any) => {
+					const product = await Product.findById(item.id);
+					return (await sum) + product!.price * item.quantity;
+				},
+				Promise.resolve(0)
+			),
+			currency: "usd",
+			status: "pending",
+		});
 
 		const session = await stripe.checkout.sessions.create({
 			payment_method_types: ["card"],
