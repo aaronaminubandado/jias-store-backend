@@ -34,3 +34,22 @@ export const getProductById = async (_req: Request, res: Response) => {
 		return res.status(500).json({ message: err.message });
 	}
 };
+
+//Update product by ID (store/admin)
+export const updateProduct = async (_req: AuthRequest, res: Response) => {
+	try {
+		const product = await Product.findByIdAndUpdate(
+			_req.params.id,
+			_req.body,
+			{
+				new: true,
+				runValidators: true,
+			}
+		);
+		if (!product)
+			return res.status(404).json({ message: "Product not found" });
+		return res.status(200).json(product);
+	} catch (err: any) {
+		return res.status(400).json({ message: err.message });
+	}
+};

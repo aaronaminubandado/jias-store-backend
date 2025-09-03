@@ -3,6 +3,7 @@ import {
 	createProduct,
 	getProductById,
 	getProducts,
+	updateProduct,
 } from "@/controllers/product.controller";
 import { authenticate } from "@/middleware/auth.middleware";
 import { authorize } from "@/middleware/role.middleware";
@@ -19,6 +20,12 @@ productRouter.post(
 	authenticate,
 	authorize("store", "admin"),
 	createProduct
+);
+productRouter.put(
+	"/:id",
+	authenticate,
+	authorize("store", "admin"),
+	updateProduct
 );
 
 export default productRouter;
