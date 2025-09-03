@@ -14,5 +14,6 @@ export const env = {
 	MONGODB_URI: required("MONGODB_URI", "mongodb://127.0.0.1:27017/jiastore"),
 	JWT_SECRET:
 		process.env.JWT_SECRET || "dev_json_web_secret_wefjidjkcdjkrqjicne", //remember to replace
-	STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? ""
+	STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? "",
+	STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET ?? "",
 };
