@@ -1,6 +1,7 @@
 import { Router } from "express";
 import authRoutes from "@/routes/auth.routes";
 import productRouter from "./product.routes";
+import checkoutRouter from "./checkout.routes";
 
 export const router = Router();
 
@@ -11,4 +12,5 @@ router.get("/health", (_req, res) => {
 //Feature routers
 router.use("/auth", authRoutes);
 // router.use("/stores",storeRouter);
-router.use("/products",productRouter);
+router.use("/products", productRouter);
+router.use("/checkout", checkoutRouter);
