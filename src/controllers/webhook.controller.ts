@@ -3,6 +3,7 @@ import stripe from "@/config/stripe";
 import { env } from "@/config/env";
 import Stripe from "stripe";
 import { Order } from "@/models/Order";
+import { Product } from "@/models/Product";
 
 //Stripe webhook endpoint
 export const handleStripeWebhook = async (_req: Request, res: Response) => {
@@ -36,9 +37,15 @@ export const handleStripeWebhook = async (_req: Request, res: Response) => {
 					order.status = "paid";
 					order.paymentIntentId = session.payment_intent as string;
 					await order.save();
+					// Decrement stock for each product
+					for (const item of order.products) {
+						await Product.findByIdAndUpdate(item.product, {
+							$inc: { stock: -item.quantity },
+						});
+					}
 				}
 				console.log(`Payment completed ${event.type}`);
-				//TODO: Mark payment as paid in db
+
 				break;
 
 			case "payment_intent.succeeded":
