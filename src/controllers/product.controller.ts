@@ -53,3 +53,17 @@ export const updateProduct = async (_req: AuthRequest, res: Response) => {
 		return res.status(400).json({ message: err.message });
 	}
 };
+
+//Delete product by ID (store/admin)
+export const deleteProduct = async (_req: AuthRequest, res: Response) => {
+	try {
+		const product = await Product.findByIdAndDelete(_req.params.id);
+		if (!product)
+			return res.status(404).json({ message: "Product not found" });
+		return res
+			.status(200)
+			.json({ message: "Product deleted successfully" });
+	} catch (err: any) {
+		return res.status(500).json({ message: err.message });
+	}
+};
