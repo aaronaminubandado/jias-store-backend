@@ -65,6 +65,12 @@ export const createCheckoutSession = async (_req: Request, res: Response) => {
 			cancel_url: `${env.FRONTEND_URL}/cancel`,
 		});
 
+
+        // Update order with Stripe session id
+		order.checkoutSessionId = session.id;
+		await order.save();
+
+
 		res.status(200).json({ url: session.url });
 	} catch (err: any) {
 		console.error(err);
