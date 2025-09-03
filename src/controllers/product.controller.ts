@@ -22,3 +22,15 @@ export const getProducts = async (_req: Request, res: Response) => {
 		return res.status(500).json({ message: err.message });
 	}
 };
+
+//Get a single product by ID (public)
+export const getProductById = async (_req: Request, res: Response) => {
+	try {
+		const product = await Product.findById(_req.params.id);
+		if (!product)
+			return res.status(404).json({ message: "Product not found" });
+		return res.status(200).json(product);
+	} catch (err: any) {
+		return res.status(500).json({ message: err.message });
+	}
+};
