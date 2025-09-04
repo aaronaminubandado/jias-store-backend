@@ -21,13 +21,41 @@ export interface IOrder extends Document {
 const OrderSchema: Schema<IOrder> = new Schema(
 	{
 		user: { type: Schema.Types.ObjectId, ref: "User", required: false },
-		products: [
-			{
-				product: { type: Schema.Types.ObjectId, ref: "Product" },
-				quantity: { type: Number, required: true },
-				price: { type: Number, required: true },
-			},
-		],
+		products: {
+			type: [
+				{
+					_id: false,
+					product: {
+						type: Schema.Types.ObjectId,
+						ref: "Product",
+						required: true,
+					},
+					quantity: {
+						type: Number,
+						required: true,
+						min: 1,
+						validate: {
+							validator: Number.isInteger,
+							message: "quantity must be an integer",
+						},
+					},
+					priceCents: {
+						type: Number,
+						required: true,
+						min: 0,
+						validate: {
+							validator: Number.isInteger,
+							message: "priceCents must be an integer",
+						},
+					},
+				},
+			],
+			required: true,
+			validate: [
+				(arr: unknown[]) => Array.isArray(arr) && arr.length > 0,
+				"Order must have at least one product",
+			],
+		},
 		totalAmount: { type: Number, required: true },
 		currency: { type: String, default: "usd" },
 		status: {
@@ -35,8 +63,20 @@ const OrderSchema: Schema<IOrder> = new Schema(
 			enum: ["pending", "paid", "failed", "refunded"],
 			default: "pending",
 		},
-		paymentIntentId: { type: String },
-		checkoutSessionId: { type: String },
+		paymentIntentId: {
+			type: String,
+			index: true,
+			unique: true,
+			sparse: true,
+			select: false,
+		},
+		checkoutSessionId: {
+			type: String,
+			index: true,
+			unique: true,
+			sparse: true,
+			select: false,
+		},
 	},
 	{ timestamps: true }
 );
