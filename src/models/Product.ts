@@ -19,14 +19,28 @@ export interface ProductDocument extends Document {
 const ProductSchema: Schema = new Schema(
 	{
 		name: { type: String, required: true },
-		price: { type: Number, required: true },
-		stock: { type: Number, required: true },
+		price: { type: Number, required: true, min: 0 },
+		stock: {
+			type: Number,
+			required: true,
+			default: 0,
+			min: 0,
+			validate: {
+				validator: Number.isInteger,
+				message: "stock must be an integer",
+			},
+		},
 		category: { type: String, required: true },
 		description: { type: String },
 		image: { type: String },
-		sku: { type: String, unique: true },
+		sku: {
+			type: String,
+			unique: true,
+			trim: true,
+			lowercase: true,
+			immutable: true,
+		},
 		brand: { type: String },
-		inStock: { type: Boolean, default: true },
 		tags: [{ type: String }],
 		featured: { type: Boolean, default: false },
 	},
