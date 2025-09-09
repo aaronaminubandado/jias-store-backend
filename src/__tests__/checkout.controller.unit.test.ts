@@ -5,6 +5,8 @@ import { createApp } from "@/app";
 import { Product } from "@/models/Product";
 import { Order } from "@/models/Order";
 
+jest.setTimeout(120000);
+
 jest.mock("@/config/stripe", () => ({
 	checkout: {
 		sessions: {
@@ -17,20 +19,50 @@ jest.mock("@/config/stripe", () => ({
 }));
 
 let mongo: MongoMemoryServer;
+let app: any;
 
 beforeAll(async () => {
-	mongo = await MongoMemoryServer.create();
-	await mongoose.connect(mongo.getUri());
-});
+	try {
+		mongo = await MongoMemoryServer.create({
+			instance: {
+				launchTimeout: 30000,
+			},
+		});
+
+		const uri = mongo.getUri();
+		await mongoose.connect(uri, {
+			dbName: "jest",
+			serverSelectionTimeoutMS: 30000,
+			connectTimeoutMS: 30000,
+		});
+
+		//Create app instance properly
+		app = createApp();
+	} catch (error) {
+		console.error("Failed to setup test environment:", error);
+		throw error;
+	}
+}, 60000);
 
 afterAll(async () => {
-	await mongoose.disconnect();
-	await mongo.stop();
-});
+	try {
+		if (mongoose.connection.readyState !== 0) {
+			await mongoose.connection.dropDatabase();
+			await mongoose.connection.close();
+		}
+		if (mongo) {
+			await mongo.stop();
+		}
+	} catch (error) {
+		console.error("Error during cleanup:", error);
+	}
+}, 30000);
 
 beforeEach(async () => {
-	await Product.deleteMany({});
-	await Order.deleteMany({});
+	if (mongoose.connection.readyState === 1) {
+		await Product.deleteMany({});
+		await Order.deleteMany({});
+	}
 });
 
 describe("Checkout session", () => {
@@ -38,13 +70,16 @@ describe("Checkout session", () => {
 		const prod = await Product.create({
 			name: "Test",
 			price: 10,
+			category: "test",
 			stock: 5,
 			reserved: 0,
 		});
 
-		const res = await request(createApp)
-			.post("/api/checkout/session")
-			.send({ items: [{ id: (prod._id as string).toString(), quantity: 2 }] })
+		const res = await request(app)
+			.post("/api/checkout")
+			.send({
+				items: [{ id: (prod._id as mongoose.Types.ObjectId).toString(), quantity: 2 }],
+			})
 			.expect(200);
 
 		expect(res.body.url).toMatch(/http/);
@@ -56,21 +91,24 @@ describe("Checkout session", () => {
 		expect(order).toBeTruthy();
 		expect(order!.status).toBe("pending");
 		expect(order!.totalAmount).toBe(20);
-	});
+	}, 30000);
 
 	it("rejects if not enough stock", async () => {
 		const prod = await Product.create({
 			name: "Test",
+			category: "test_category",
 			price: 10,
 			stock: 1,
 			reserved: 0,
 		});
 
-		const res = await request(createApp)
-			.post("/api/checkout/session")
-			.send({ items: [{ id: (prod._id as string).toString(), quantity: 5 }] })
+		const res = await request(app)
+			.post("/api/checkout")
+			.send({
+				items: [{ id: (prod._id as mongoose.Types.ObjectId).toString(), quantity: 5 }],
+			})
 			.expect(409);
 
 		expect(res.body.error).toMatch(/Not enough stock/);
-	});
+	}, 30000);
 });
