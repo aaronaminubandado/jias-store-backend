@@ -4,6 +4,7 @@ export interface ProductDocument extends Document {
 	name: string;
 	price: number;
 	stock: number;
+    reserved: number;
 	category: string;
 	description: string;
 	image?: string;
@@ -29,6 +30,12 @@ const ProductSchema: Schema = new Schema(
 				validator: Number.isInteger,
 				message: "stock must be an integer",
 			},
+		},
+        reserved: {
+			type: Number,
+			required: true,
+			default: 0,
+			min: 0,
 		},
 		category: { type: String, required: true },
 		description: { type: String },
