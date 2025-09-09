@@ -88,7 +88,7 @@ export const createCheckoutSession = async (_req: Request, res: Response) => {
 			return {
 				product: item.id,
 				quantity: item.quantity,
-				price: product.price,
+				priceCents: Math.round(Number(product.price) * 100), 
 			};
 		});
 
