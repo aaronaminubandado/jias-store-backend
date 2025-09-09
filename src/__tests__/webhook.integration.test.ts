@@ -1,10 +1,11 @@
 import request from "supertest";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import { createApp as app } from "@/app";
+import { createApp } from "@/app";
 import { Product } from "@/models/Product";
 import { Order } from "@/models/Order";
-import stripe from "@/config/stripe";
+
+jest.setTimeout(120000);
 
 jest.mock("@/config/stripe", () => ({
 	webhooks: {
@@ -24,40 +25,74 @@ jest.mock("@/config/stripe", () => ({
 }));
 
 let mongo: MongoMemoryServer;
+let app: any;
 
 beforeAll(async () => {
-	mongo = await MongoMemoryServer.create();
-	await mongoose.connect(mongo.getUri());
-});
+	try {
+		// Increase timeout for MongoMemoryServer
+		mongo = await MongoMemoryServer.create({
+			instance: {
+				// Increase startup timeout
+				launchTimeout: 30000,
+			},
+		});
+
+		const uri = mongo.getUri();
+		await mongoose.connect(uri, {
+			dbName: "jest",
+			serverSelectionTimeoutMS: 30000,
+			connectTimeoutMS: 30000,
+		});
+
+		// Create app instance once
+		app = createApp();
+	} catch (error) {
+		console.error("Failed to setup test environment:", error);
+		throw error;
+	}
+}, 60000); // 60 second timeout for setup
 
 afterAll(async () => {
-	await mongoose.disconnect();
-	await mongo.stop();
-});
+	try {
+		if (mongoose.connection.readyState !== 0) {
+			await mongoose.connection.dropDatabase();
+			await mongoose.connection.close();
+		}
+		if (mongo) {
+			await mongo.stop();
+		}
+	} catch (error) {
+		console.error("Error during cleanup:", error);
+	}
+}, 30000);
 
 beforeEach(async () => {
-	await Product.deleteMany({});
-	await Order.deleteMany({});
+	if (mongoose.connection.readyState === 1) {
+		await Product.deleteMany({});
+		await Order.deleteMany({});
+	}
 });
 
 describe("Webhook handler", () => {
 	it("marks order paid and decrements stock", async () => {
 		const prod = await Product.create({
-			name: "Test",
+			name: "Test Product",
+			category: "test_category",
 			price: 10,
 			stock: 5,
 			reserved: 2,
+			description: "Test description",
 		});
 
 		const order = await Order.create({
-			products: [{ product: prod._id, quantity: 2, price: 10 }],
+			products: [{ product: prod._id, quantity: 2, priceCents: 10 }],
 			totalAmount: 20,
 			currency: "usd",
 			status: "pending",
 			checkoutSessionId: "sess_123",
 		});
 
-		await request(app)
+		const response = await request(app)
 			.post("/api/webhook")
 			.set("Stripe-Signature", "fake")
 			.send("{}")
@@ -69,5 +104,5 @@ describe("Webhook handler", () => {
 		const updatedProduct = await Product.findById(prod._id);
 		expect(updatedProduct!.stock).toBe(3);
 		expect(updatedProduct!.reserved).toBe(0);
-	});
+	}, 30000); // 30 second timeout for this specific test
 });
