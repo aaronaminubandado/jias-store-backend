@@ -25,6 +25,16 @@ function pick<T extends object, K extends keyof T>(
 	}, {} as Pick<T, K>);
 }
 
+// Get all products (public)
+export const getProducts = async (_req: Request, res: Response) => {
+	try {
+		const products = await Product.find();
+		return res.status(200).json(products);
+	} catch (err: any) {
+		return res.status(500).json({ message: "Internal server error" });
+	}
+};
+
 //Create a new product (store/admin only)
 export const createProduct = async (req: AuthRequest, res: Response) => {
 	try {
