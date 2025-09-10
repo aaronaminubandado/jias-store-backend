@@ -10,44 +10,53 @@ import { AuthRequest } from "@/middleware/auth.middleware";
  * Uses schema fields: products[].priceCents and order.totalAmount (if present).
  */
 const formatOrderForAPI = (orderDoc: any, role: string) => {
-	// Products array: product may be populated or an id
+	// Normalize products
 	const products = (orderDoc.products || []).map((p: any) => {
 		const prod = p.product || null;
-		const priceCents = p.priceCents ?? p.price ?? p.price_cents ?? 0; // handle variants defensively
+		// Prefer explicit priceCents field, fallback to price * 100
+		const priceCents =
+			typeof p.priceCents === "number"
+				? p.priceCents
+				: typeof p.price === "number"
+				? Math.round(p.price * 100)
+				: 0;
+
 		return {
 			productId: prod?._id ?? p.product,
 			name: prod?.name ?? undefined,
 			image: prod?.image ?? undefined,
 			quantity: p.quantity,
 			priceCents,
-			price: typeof priceCents === "number" ? priceCents / 100 : null,
+			price: priceCents / 100,
 		};
 	});
 
-	const totalAmountCents =
-		orderDoc.totalAmountCents ??
-		(Number.isInteger(orderDoc.totalAmount)
-			? Math.round(orderDoc.totalAmount * 100)
-			: undefined) ??
-		orderDoc.totalAmount ?? // fallback
-		undefined;
+	// Normalize totals
+	let totalAmountCents: number | undefined = undefined;
+
+	if (Number.isInteger(orderDoc.totalAmountCents)) {
+		totalAmountCents = orderDoc.totalAmountCents;
+	} else if (
+		typeof orderDoc.totalAmount === "number" &&
+		!Number.isNaN(orderDoc.totalAmount)
+	) {
+		// derive from totalAmount (assumed in dollars)
+		totalAmountCents = Math.round(orderDoc.totalAmount * 100);
+	}
 
 	const base = {
 		id: orderDoc._id,
 		products,
-		totalAmount:
-			totalAmountCents !== undefined
-				? totalAmountCents / 100
-				: orderDoc.totalAmount,
-		totalAmountCents,
+		totalAmount: totalAmountCents ? totalAmountCents / 100 : null,
+		totalAmountCents: totalAmountCents ?? null,
 		currency: orderDoc.currency,
 		status: orderDoc.status,
 		createdAt: orderDoc.createdAt,
 		updatedAt: orderDoc.updatedAt,
 	};
 
+	// Add admin-only fields if applicable
 	if (role === "admin") {
-		// include admin-only fields
 		return {
 			...base,
 			paymentIntentId: orderDoc.paymentIntentId ?? null,
@@ -142,5 +151,62 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
 	} catch (err: any) {
 		console.error("getOrders error: ", err);
 		return res.status(500).json({ message: "Failed to fetch orders" });
+	}
+};
+
+/**
+ * GET /api/orders/:ids
+ * Resource-level permission checks.
+ */
+export const getOrderById = async (req: AuthRequest, res: Response) => {
+	try {
+		const user = req.user;
+		if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+		const { id } = req.params;
+		if (!isValidObjectId(id))
+			return res.status(400).json({ message: "Invalid order id" });
+
+		const selectForAdmin =
+			user.role === "admin" ? "+paymentIntentId +checkoutSessionId" : "";
+
+		const order = await Order.findById(id)
+			.select(selectForAdmin)
+			.populate({ path: "products.product", model: Product })
+			.lean()
+			.exec();
+
+		if (!order) return res.status(404).json({ message: "Order not found" });
+
+		if (user.role === "admin") {
+			return res.json({ data: formatOrderForAPI(order, "admin") });
+		}
+
+		if (user.role === "customer") {
+			if (!order.user || String(order.user) !== String(user.id)) {
+				return res.status(403).json({ message: "Forbidden" });
+			}
+			return res.json({ data: formatOrderForAPI(order, "customer") });
+		}
+
+		if (user.role === "store") {
+			const containsStoreProduct = (order.products || []).some(
+				(p: any) => {
+					const prod = p.product;
+					if (!prod) return false;
+					return prod.store && String(prod.store) === String(user.id);
+				}
+			);
+
+			if (!containsStoreProduct) {
+				return res.status(403).json({ message: "Forbidden" });
+			}
+			return res.json({ data: formatOrderForAPI(order, "store") });
+		}
+
+		return res.status(403).json({ message: "Forbidden" });
+	} catch (err: any) {
+		console.error("getOrderById error: ", err);
+		return res.status(500).json({ message: "Failed to fetch order" });
 	}
 };
