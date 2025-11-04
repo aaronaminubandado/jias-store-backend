@@ -4,13 +4,12 @@ export interface ProductDocument extends Document {
 	name: string;
 	price: number;
 	stock: number;
-    reserved: number;
+	reserved: number;
 	category: string;
 	description: string;
 	image?: string;
 	sku?: string;
 	brand?: string;
-	inStock: boolean;
 	tags?: string[];
 	featured?: boolean;
 	createdAt: Date;
@@ -31,11 +30,15 @@ const ProductSchema: Schema = new Schema(
 				message: "stock must be an integer",
 			},
 		},
-        reserved: {
+		reserved: {
 			type: Number,
 			required: true,
 			default: 0,
 			min: 0,
+			validate: {
+				validator: Number.isInteger,
+				message: "reserved must be an integer",
+			},
 		},
 		category: { type: String, required: true },
 		description: { type: String },
