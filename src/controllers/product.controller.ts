@@ -85,19 +85,32 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
 		if (!isValidObjectId(id)) {
 			return res.status(400).json({ message: "Invalid product id" });
 		}
+		const update = pick(req.body, ALLOWED_PRODUCT_FIELDS);
+		if (Object.keys(update).length === 0) {
+			return res
+				.status(400)
+				.json({ message: "No valid fields to update" });
+		}
 		const product = await Product.findByIdAndUpdate(
 			id,
-			{ $set: pick(req.body, ALLOWED_PRODUCT_FIELDS) }, // whitelist fields
+			{ $set: update },
 			{
 				new: true,
 				runValidators: true,
 				context: "query",
+				omitUndefined: true,
 			}
 		);
+
 		if (!product)
 			return res.status(404).json({ message: "Product not found" });
 		return res.status(200).json(product);
 	} catch (err: any) {
+		if (err?.code === 11000) {
+			return res
+				.status(409)
+				.json({ message: "Duplicate value for unique field" });
+		}
 		if (err instanceof MongooseError.ValidationError) {
 			return res.status(400).json({ message: err.message });
 		}
