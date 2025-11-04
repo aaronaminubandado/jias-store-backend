@@ -5,6 +5,7 @@ jest.mock("@/models/Product");
 
 const mockedProduct = Product as jest.Mocked<typeof Product>;
 
+//Import rollback reserved from main code
 async function rollbackReserved(
 	reservedOps: { id: string; quantity: number }[]
 ) {
