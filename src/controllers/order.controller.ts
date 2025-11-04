@@ -80,8 +80,18 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
 		const user = req.user;
 		if (!user) return res.status(401).json({ message: "Unauthorized" });
 
-		const page = Math.max(1, Number(req.query.page) || 1);
-		const limit = Math.min(100, Number(req.query.limit) || 25);
+		const parsedPage = Number(req.query.page);
+		const parsedLimit = Number(req.query.limit);
+
+		if (req.query.page && (isNaN(parsedPage) || parsedPage < 1)) {
+		  return res.status(400).json({ message: "Invalid page parameter" });
+		}
+		if (req.query.limit && (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100)) {
+		  return res.status(400).json({ message: "Invalid limit parameter (1-100)" });
+		}
+
+		const page = parsedPage || 1;
+		const limit = parsedLimit || 25;
 		const skip = (page - 1) * limit;
 
 		if (user.role === "admin") {
@@ -190,13 +200,16 @@ export const getOrderById = async (req: AuthRequest, res: Response) => {
 		}
 
 		if (user.role === "store") {
-			const containsStoreProduct = (order.products || []).some(
-				(p: any) => {
-					const prod = p.product;
-					if (!prod) return false;
-					return prod.store && String(prod.store) === String(user.id);
-				}
-			);
+const containsStoreProduct = (order.products || []).some(
+    (p: any) => {
+        const prod = p.product;
+        // Handle both populated and unpopulated cases
+        if (!prod) return false;
+        // If product is just an ID (not populated), we can't check store ownership
+        if (typeof prod === 'string' || !prod.store) return false;
+        return prod.store && String(prod.store) === String(user.id);
+    }
+);
 
 			if (!containsStoreProduct) {
 				return res.status(403).json({ message: "Forbidden" });
