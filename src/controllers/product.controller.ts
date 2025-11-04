@@ -14,7 +14,11 @@ const ALLOWED_PRODUCT_FIELDS = [
 	"isActive",
 ];
 
-const FORBIDDEN_KEYS = new Set<keyof any>(["__proto__", "prototype", "constructor"] as const);
+const FORBIDDEN_KEYS = new Set<keyof any>([
+	"__proto__",
+	"prototype",
+	"constructor",
+] as const);
 
 function pick<T extends object, K extends keyof T>(
 	obj: T,
@@ -42,10 +46,14 @@ export const getProducts = async (_req: Request, res: Response) => {
 //Create a new product (store/admin only)
 export const createProduct = async (req: AuthRequest, res: Response) => {
 	try {
-		const product = new Product(req.body);
+		const payload = pick(req.body, ALLOWED_PRODUCT_FIELDS);
+		const product = new Product(payload);
 		await product.save();
 		return res.status(201).json(product);
 	} catch (err: any) {
+		if (err?.code === 11000) {
+			return res.status(409).json({ message: "Product already exists" });
+		}
 		if (err instanceof MongooseError.ValidationError) {
 			return res.status(400).json({ message: err.message });
 		}
