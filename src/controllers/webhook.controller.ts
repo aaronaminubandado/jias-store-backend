@@ -52,7 +52,7 @@ export const handleStripeWebhook = async (_req: Request, res: Response) => {
 					const order = await Order.findOneAndUpdate(
 						{ checkoutSessionId: session.id, status: "pending" },
 						{ $set: { status: "paid", paymentIntentId } },
-						{ new: true }
+						{ new: true, session: sessionDb }
 					);
 
 					if (order) {
