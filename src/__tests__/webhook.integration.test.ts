@@ -67,9 +67,14 @@ afterAll(async () => {
 }, 30000);
 
 beforeEach(async () => {
-	if (mongoose.connection.readyState === 1) {
-		await Product.deleteMany({});
-		await Order.deleteMany({});
+	try {
+		if (mongoose.connection.readyState === 1) {
+			await Product.deleteMany({});
+			await Order.deleteMany({});
+		}
+	} catch (error) {
+		console.error("Error during test data cleanup:", error);
+		throw error;
 	}
 });
 
