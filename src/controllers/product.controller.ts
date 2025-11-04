@@ -14,13 +14,17 @@ const ALLOWED_PRODUCT_FIELDS = [
 	"isActive",
 ];
 
+const FORBIDDEN_KEYS = new Set<keyof any>(["__proto__", "prototype", "constructor"] as const);
+
 function pick<T extends object, K extends keyof T>(
 	obj: T,
 	keys: readonly K[]
 ): Pick<T, K> {
 	return keys.reduce((acc, k) => {
-		if (Object.prototype.hasOwnProperty.call(obj, k))
-			(acc as any)[k] = (obj as any)[k];
+		if (!Object.prototype.hasOwnProperty.call(obj, k)) return acc;
+		if (typeof k === "string" && FORBIDDEN_KEYS.has(k as any)) return acc;
+		const v = (obj as any)[k];
+		if (v !== undefined) (acc as any)[k] = v;
 		return acc;
 	}, {} as Pick<T, K>);
 }
