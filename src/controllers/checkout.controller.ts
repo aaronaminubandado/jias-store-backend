@@ -43,7 +43,7 @@ export const createCheckoutSession = async (_req: Request, res: Response) => {
 		products.forEach((p) => productMap.set(p.id.toString(), p));
 
 		// Reserve stock atomically (available = stock - reserved)
-		const reservedOps: { id: string; quantity: number }[] = [];
+		reservedOps = [];
 		for (const item of items) {
 			const updated = await Product.findOneAndUpdate(
 				{
@@ -69,6 +69,9 @@ export const createCheckoutSession = async (_req: Request, res: Response) => {
 		// Prepare Stripe line_items
 		const line_items = items.map((item) => {
 			const product = productMap.get(item.id)!;
+			if (!product) {
+				throw new Error(`Product ${item.id} not found`);
+			}
 			return {
 				price_data: {
 					currency: "usd",
@@ -76,7 +79,7 @@ export const createCheckoutSession = async (_req: Request, res: Response) => {
 						name: product.name,
 						description: product.description || "",
 					},
-					unit_amount: Math.round(Number(product.price) * 100),
+					unit_amount: Math.round(parseFloat(product.price.toString()) * 100),
 				},
 				quantity: item.quantity,
 			};
@@ -85,22 +88,28 @@ export const createCheckoutSession = async (_req: Request, res: Response) => {
 		// Prepare order products
 		const orderProducts = items.map((item) => {
 			const product = productMap.get(item.id);
+			if (!product) {
+				throw new Error(`Product ${item.id} not found`);
+			}
 			return {
 				product: item.id,
 				quantity: item.quantity,
-				priceCents: Math.round(Number(product.price) * 100), 
+				priceCents: Math.round(Number(product.price) * 100),
 			};
 		});
 
 		const totalAmountCents = items.reduce((sum, item) => {
 			const product = productMap.get(item.id)!;
+			if (!product) {
+				throw new Error(`Product ${item.id} not found`);
+			}
 			return (
 				sum + Math.round(Number(product.price) * 100) * item.quantity
 			);
 		}, 0);
 		const totalAmount = totalAmountCents / 100;
 		// Create pending order
-		const order = await Order.create({
+		order = await Order.create({
 			products: orderProducts,
 			totalAmount,
 			currency: "usd",
