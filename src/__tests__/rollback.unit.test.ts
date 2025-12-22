@@ -1,7 +1,7 @@
-import { Product } from "@/models/Product";
+import { Product } from "../models/Product";
 
 jest.setTimeout(100000); 
-jest.mock("@/models/Product");
+jest.mock("../models/Product");
 
 const mockedProduct = Product as jest.Mocked<typeof Product>;
 

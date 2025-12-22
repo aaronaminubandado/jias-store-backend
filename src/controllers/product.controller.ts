@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { isValidObjectId, Error as MongooseError } from "mongoose";
-import { Product } from "@/models/Product";
-import { AuthRequest } from "@/middleware/auth.middleware";
+import { Product } from "../models/Product";
+import { AuthRequest } from "../middleware/auth.middleware";
 
 const ALLOWED_PRODUCT_FIELDS = [
 	// TODO: align with schema

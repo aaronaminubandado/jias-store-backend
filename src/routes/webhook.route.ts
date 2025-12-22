@@ -1,6 +1,6 @@
 import { Router, Express } from "express";
 import bodyParser from "body-parser";
-import { handleStripeWebhook } from "@/controllers/webhook.controller";
+import { handleStripeWebhook } from "../controllers/webhook.controller";
 import express from "express";
 
 const webhookRouter = Router();

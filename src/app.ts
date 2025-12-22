@@ -6,8 +6,8 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { router as apiRouter } from "./routes";
-import { errorHandler } from "@/middleware/error.middleware";
-import { env } from "@/config/env";
+import { errorHandler } from "./middleware/error.middleware";
+import { env } from "./config/env";
 import webhookRouter from "./routes/webhook.route";
 
 export function createApp() {

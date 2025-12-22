@@ -1,4 +1,4 @@
-import { createCheckoutSession } from "@/controllers/checkout.controller";
+import { createCheckoutSession } from "../controllers/checkout.controller";
 import { Router } from "express";
 
 const checkoutRouter = Router();

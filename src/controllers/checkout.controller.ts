@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import stripe from "@/config/stripe";
-import { env } from "@/config/env";
-import { Product } from "@/models/Product";
-import { Order } from "@/models/Order";
+import stripe from "../config/stripe";
+import { env } from "../config/env";
+import { Product } from "../models/Product";
+import { Order } from "../models/Order";
 import mongoose from "mongoose";
 
 interface CheckoutItem {

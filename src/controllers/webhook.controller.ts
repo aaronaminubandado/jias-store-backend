@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import stripe from "@/config/stripe";
-import { env } from "@/config/env";
+import stripe from "../config/stripe";
+import { env } from "../config/env";
 import Stripe from "stripe";
-import { Order } from "@/models/Order";
-import { Product } from "@/models/Product";
+import { Order } from "../models/Order";
+import { Product } from "../models/Product";
 import mongoose from "mongoose";
 
 // Stripe webhook endpoint

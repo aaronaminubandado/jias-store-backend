@@ -7,7 +7,7 @@
 		"test": "jest --runInBand --detectOpenHandles",
 		"dev": "nodemon",
 		"build": "tsc",
-		"start": "node -r tsconfig-paths/register dist/server.js",
+		"start": "node dist/src/server.js",
 		"typecheck": "tsc --noEmit"
 	},
 	"keywords": [],

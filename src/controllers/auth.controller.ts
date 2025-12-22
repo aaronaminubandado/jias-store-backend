@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import User from "@/models/User";
-import { hashPassword, comparePassword } from "@/utils/hashPassword";
+import User from "../models/User";
+import { hashPassword, comparePassword } from "../utils/hashPassword";
 import jwt from "jsonwebtoken";
-import { env } from "@/config/env";
+import { env } from "../config/env";
 
 export const register = async (req: Request, res: Response) => {
 	const { email, password, role } = req.body;

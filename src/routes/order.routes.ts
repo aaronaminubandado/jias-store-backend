@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { getOrderById, getOrders } from "@/controllers/order.controller";
-import { authenticate } from "@/middleware/auth.middleware";
-import { authorize } from "@/middleware/role.middleware";
+import { getOrderById, getOrders } from "../controllers/order.controller";
+import { authenticate } from "../middleware/auth.middleware";
+import { authorize } from "../middleware/role.middleware";
 
 const orderRouter = Router();
 

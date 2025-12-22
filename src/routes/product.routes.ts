@@ -5,9 +5,9 @@ import {
 	getProductById,
 	getProducts,
 	updateProduct,
-} from "@/controllers/product.controller";
-import { authenticate } from "@/middleware/auth.middleware";
-import { authorize } from "@/middleware/role.middleware";
+} from "../controllers/product.controller";
+import { authenticate } from "../middleware/auth.middleware";
+import { authorize } from "../middleware/role.middleware";
 
 const productRouter = Router();
 

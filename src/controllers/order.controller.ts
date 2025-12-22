@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { isValidObjectId } from "mongoose";
-import { IOrder, Order, OrderProduct } from "@/models/Order";
-import { Product } from "@/models/Product";
-import User from "@/models/User";
-import { AuthRequest } from "@/middleware/auth.middleware";
+import { IOrder, Order, OrderProduct } from "../models/Order";
+import { Product } from "../models/Product";
+import User from "../models/User";
+import { AuthRequest } from "../middleware/auth.middleware";
 
 /**
  * Convert an order document to API-safe payload.

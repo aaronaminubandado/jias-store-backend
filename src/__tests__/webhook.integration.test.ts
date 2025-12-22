@@ -1,13 +1,13 @@
 import request from "supertest";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import { createApp } from "@/app";
-import { Product } from "@/models/Product";
-import { Order } from "@/models/Order";
+import { createApp } from "../app";
+import { Product } from "../models/Product";
+import { Order } from "../models/Order";
 
 jest.setTimeout(120000);
 
-jest.mock("@/config/stripe", () => ({
+jest.mock("../config/stripe", () => ({
 	webhooks: {
 		constructEvent: jest
 			.fn()
