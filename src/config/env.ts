@@ -26,4 +26,8 @@ export const env = {
 		process.env.NODE_ENV === "production"
 			? required("STRIPE_WEBHOOK_SECRET")
 			: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+	// Cloudinary configuration (optional in dev, required in production)
+	CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || "",
+	CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || "",
+	CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || "",
 };
