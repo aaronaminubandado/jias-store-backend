@@ -12,6 +12,7 @@ export interface ProductDocument extends Document {
 	brand?: string;
 	tags?: string[];
 	featured?: boolean;
+	store?: mongoose.Types.ObjectId; // Reference to User (store owner)
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -53,6 +54,12 @@ const ProductSchema: Schema = new Schema(
 		brand: { type: String },
 		tags: [{ type: String }],
 		featured: { type: Boolean, default: false },
+		store: {
+			type: Schema.Types.ObjectId,
+			ref: "User",
+			required: false,
+			index: true,
+		},
 	},
 	{ timestamps: true }
 );
